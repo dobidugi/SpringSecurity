@@ -16,11 +16,14 @@ public class SecurityConfig  {
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
                 .authorizeHttpRequests((authz) -> authz.anyRequest().authenticated())
-                .formLogin(form ->
-                    form.loginPage("/login")
-                            .permitAll()
+                .formLogin(AbstractAuthenticationFilterConfigurer::permitAll)
+                .sessionManagement(session ->
+                        session
+//                                .invalidSessionUrl("/invalid") // 세션 유효 하지 않을때 이동할 URL
+                                .maximumSessions(1) // 최대 허용 가능 세션, -1 무제한
+//                                .expiredUrl("/expired") // 토근 만료 되었을때 이동할 URL
+                                .maxSessionsPreventsLogin(false) // true 동시 로그인 차단, false 기존 세션 만료 기존 세션 만료
                 );
-
         return http.build();
     }
 }
