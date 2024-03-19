@@ -16,6 +16,8 @@ import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.provisioning.InMemoryUserDetailsManager;
 import org.springframework.security.web.AuthenticationEntryPoint;
 import org.springframework.security.web.SecurityFilterChain;
@@ -33,34 +35,39 @@ public class SecurityConfig  {
   public UserDetailsService users() {
     UserDetails user = User.builder()
             .username("user")
-            .password("{noop}1234")
+            .password(passwordEncoder().encode("1234"))
             .roles("USER")
+            .build();
+
+    UserDetails manager = User.builder()
+            .username("manager")
+            .password(passwordEncoder().encode("1234"))
+            .roles("MANAGER")
             .build();
 
     UserDetails admin = User.builder()
             .username("admin")
-            .password("{noop}1234")
+            .password(passwordEncoder().encode("1234"))
             .roles("ADMIN")
             .build();
 
-    UserDetails sys = User.builder()
-            .username("sys")
-            .password("{noop}1234")
-            .roles("SYS")
-            .build();
 
-    return new InMemoryUserDetailsManager(user, admin, sys);
+    return new InMemoryUserDetailsManager(user, admin, manager);
   }
 
+  @Bean
+  public PasswordEncoder passwordEncoder() {
+    return new BCryptPasswordEncoder();
+  }
   @Bean
   public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
     http
             .authorizeHttpRequests((authz) ->
                     authz
-                            .requestMatchers("/").permitAll()
-                            .requestMatchers("/mypage").hasRole("USER")
-                            .requestMatchers("/message").hasRole("MANAGER")
-                            .requestMatchers("/config").hasAnyRole("ADMIN","MANAGER","USER")
+                            .requestMatchers("/","/users").permitAll()
+                            .requestMatchers("/mypage").hasAnyRole("USER", "MANAGER", "ADMIN")
+                            .requestMatchers("/message").hasAnyRole("MANAGER", "ADMIN")
+                            .requestMatchers("/config").hasRole("ADMIN")
                             .anyRequest()
                             .authenticated())
             .formLogin(AbstractAuthenticationFilterConfigurer::permitAll)
