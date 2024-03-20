@@ -19,4 +19,9 @@ public class UserServiceImpl implements UserService {
     userRepository.save(account);
 
   }
+
+  @Override
+  public Account findByUsername(String username) {
+    return null;
+  }
 }
