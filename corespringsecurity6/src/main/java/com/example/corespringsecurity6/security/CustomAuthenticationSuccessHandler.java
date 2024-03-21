@@ -1,4 +1,4 @@
-package com.example.corespringsecurity6.service.impl;
+package com.example.corespringsecurity6.security;
 
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;

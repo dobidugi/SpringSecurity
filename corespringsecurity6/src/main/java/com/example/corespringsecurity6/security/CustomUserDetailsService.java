@@ -1,10 +1,10 @@
-package com.example.corespringsecurity6.service.impl;
+package com.example.corespringsecurity6.security;
 
 import com.example.corespringsecurity6.domain.Account;
 import com.example.corespringsecurity6.repository.UserRepository;
+import com.example.corespringsecurity6.security.AccountContext;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Primary;
-import org.springframework.core.annotation.Order;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;

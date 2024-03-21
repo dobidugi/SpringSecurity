@@ -1,4 +1,4 @@
-package com.example.corespringsecurity6.service.impl;
+package com.example.corespringsecurity6.security;
 
 import com.example.corespringsecurity6.domain.Account;
 import org.springframework.security.core.GrantedAuthority;

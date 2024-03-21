@@ -1,34 +1,17 @@
-package com.example.corespringsecurity6.config;
+package com.example.corespringsecurity6.security.config;
 
-import com.example.corespringsecurity6.service.impl.CustomAuthenticationProvider;
-import com.example.corespringsecurity6.service.impl.CustomUserDetailsService;
-import jakarta.servlet.ServletException;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
+import com.example.corespringsecurity6.security.CustomAuthenticationFailureHandler;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.security.servlet.PathRequest;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.core.annotation.Order;
-import org.springframework.security.access.AccessDeniedException;
-import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.AuthenticationProvider;
-import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
-import org.springframework.security.config.Customizer;
-import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityCustomizer;
-import org.springframework.security.config.annotation.web.configurers.AbstractAuthenticationFilterConfigurer;
-import org.springframework.security.core.userdetails.User;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.security.provisioning.InMemoryUserDetailsManager;
 import org.springframework.security.web.SecurityFilterChain;
-
 
 
 @RequiredArgsConstructor
@@ -40,6 +23,7 @@ public class SecurityConfig  {
   private final AuthenticationProvider authenticationProvider;
   private final UserDetailsService userDetailsService;
   private final PasswordEncoder passwordEncoder;
+  private final CustomAuthenticationFailureHandler customAuthenticationFailureHandler;
 //  public UserDetailsService users() {
 //    UserDetails user = User.builder()
 //            .username("user")
@@ -64,19 +48,6 @@ public class SecurityConfig  {
 //  }
 
 
-//  @Bean
-//  public PasswordEncoder passwordEncoder() {
-//    return new BCryptPasswordEncoder();
-//  }
-
-
-//  @Bean
-//  public AuthenticationProvider authenticationProvider() {
-//    DaoAuthenticationProvider authProvider = new DaoAuthenticationProvider();
-//    authProvider.setUserDetailsService(userDetailsService);
-//    authProvider.setPasswordEncoder(passwordEncoder);
-//    return authProvider;
-//  }
   @Bean
   public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
     http
@@ -87,11 +58,14 @@ public class SecurityConfig  {
                             .requestMatchers("/message").hasAnyRole("MANAGER", "ADMIN")
                             .requestMatchers("/config").hasRole("ADMIN")
                             .anyRequest()
-                            .authenticated())
+                            .authenticated()
+
+            )
             .formLogin(formLogin ->
                     formLogin.loginPage("/login")
                             .loginProcessingUrl("/login_proc")
                             .defaultSuccessUrl("/")
+                            .failureHandler(customAuthenticationFailureHandler)
                             .permitAll()
             )
             .sessionManagement(session ->
@@ -101,7 +75,6 @@ public class SecurityConfig  {
 //                                .expiredUrl("/expired") // 토근 만료 되었을때 이동할 URL
                                     .maxSessionsPreventsLogin(false) // true 동시 로그인 차단, false 기존 세션 만료 기존 세션 만료
             )
-//            .userDetailsService(userDetailsService);
             .authenticationProvider(authenticationProvider);
     return http.build();
   }

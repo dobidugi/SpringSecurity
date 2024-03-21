@@ -1,4 +1,4 @@
-package com.example.corespringsecurity6.config;
+package com.example.corespringsecurity6.security.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
