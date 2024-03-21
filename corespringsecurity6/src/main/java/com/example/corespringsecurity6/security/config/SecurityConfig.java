@@ -1,17 +1,29 @@
 package com.example.corespringsecurity6.security.config;
 
+import com.example.corespringsecurity6.security.AjaxAuthenticationOnSuccessHandler;
+import com.example.corespringsecurity6.security.AjaxAuthenticationProvider;
+import com.example.corespringsecurity6.security.AjaxLoginProcessFilter;
 import com.example.corespringsecurity6.security.CustomAuthenticationFailureHandler;
 import lombok.RequiredArgsConstructor;
 import org.springframework.boot.autoconfigure.security.servlet.PathRequest;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.AuthenticationManagerResolver;
 import org.springframework.security.authentication.AuthenticationProvider;
+import org.springframework.security.authentication.ProviderManager;
+import org.springframework.security.authorization.AuthenticatedAuthorizationManager;
+import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
+import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityCustomizer;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
 
 @RequiredArgsConstructor
@@ -19,41 +31,37 @@ import org.springframework.security.web.SecurityFilterChain;
 @EnableWebSecurity
 public class SecurityConfig  {
 
-//  private CustomUserDetailsService userDetailsService;
-  private final AuthenticationProvider authenticationProvider;
-  private final UserDetailsService userDetailsService;
-  private final PasswordEncoder passwordEncoder;
+  private final AjaxAuthenticationProvider ajaxAuthenticationProvider;
+  private final AjaxAuthenticationOnSuccessHandler ajaxAuthenticationOnSuccessHandler;
   private final CustomAuthenticationFailureHandler customAuthenticationFailureHandler;
-//  public UserDetailsService users() {
-//    UserDetails user = User.builder()
-//            .username("user")
-//            .password(passwordEncoder.passwordEncoder().encode("1234"))
-//            .roles("USER")
-//            .build();
-//
-//    UserDetails manager = User.builder()
-//            .username("manager")
-//            .password(passwordEncoder.passwordEncoder().encode("1234"))
-//            .roles("MANAGER")
-//            .build();
-//
-//    UserDetails admin = User.builder()
-//            .username("admin")
-//            .password(passwordEncoder().encode("1234"))
-//            .roles("ADMIN")
-//            .build();
-//
-//
-//    return new InMemoryUserDetailsManager(user, admin, manager);
-//  }
 
+  @Bean
+  public AuthenticationManager authenticationManager(){
+    return new ProviderManager(ajaxAuthenticationProvider);
+  }
+
+
+  @Bean
+  public AjaxAuthenticationOnSuccessHandler authenticationOnSuccessHandler() {
+    return new AjaxAuthenticationOnSuccessHandler();
+  }
+
+  @Bean
+  public AjaxLoginProcessFilter ajaxLoginProcessFilter(AuthenticationManager authenticationManager) {
+    AjaxLoginProcessFilter filter = new AjaxLoginProcessFilter();
+    filter.setAuthenticationManager(authenticationManager);
+    filter.setAuthenticationSuccessHandler(ajaxAuthenticationOnSuccessHandler);
+
+    return filter;
+  }
 
   @Bean
   public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
     http
+            .csrf(csrf -> csrf.disable())
             .authorizeHttpRequests((authz) ->
                     authz
-                            .requestMatchers("/","/users","/logout").permitAll()
+                            .requestMatchers("/","/users","/logout","/api/login").permitAll()
                             .requestMatchers("/mypage").hasRole("USER")
                             .requestMatchers("/message").hasAnyRole("MANAGER", "ADMIN")
                             .requestMatchers("/config").hasRole("ADMIN")
@@ -75,7 +83,9 @@ public class SecurityConfig  {
 //                                .expiredUrl("/expired") // 토근 만료 되었을때 이동할 URL
                                     .maxSessionsPreventsLogin(false) // true 동시 로그인 차단, false 기존 세션 만료 기존 세션 만료
             )
-            .authenticationProvider(authenticationProvider);
+//            .authenticationProvider(authenticationProvider)
+            .addFilterBefore(ajaxLoginProcessFilter(authenticationManager()), UsernamePasswordAuthenticationFilter.class);
+
     return http.build();
   }
 
