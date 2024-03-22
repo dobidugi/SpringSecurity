@@ -1,9 +1,7 @@
 package com.example.corespringsecurity6.security.config;
 
-import com.example.corespringsecurity6.security.AjaxAuthenticationOnSuccessHandler;
-import com.example.corespringsecurity6.security.AjaxAuthenticationProvider;
-import com.example.corespringsecurity6.security.AjaxLoginProcessFilter;
-import com.example.corespringsecurity6.security.CustomAuthenticationFailureHandler;
+import com.example.corespringsecurity6.security.*;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.boot.autoconfigure.security.servlet.PathRequest;
 import org.springframework.context.annotation.Bean;
@@ -13,6 +11,8 @@ import org.springframework.security.authentication.AuthenticationManagerResolver
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.ProviderManager;
 import org.springframework.security.authorization.AuthenticatedAuthorizationManager;
+import org.springframework.security.authorization.AuthorizationManager;
+import org.springframework.security.authorization.AuthorizationManagers;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -23,6 +23,8 @@ import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.access.intercept.AuthorizationFilter;
+import org.springframework.security.web.access.intercept.FilterSecurityInterceptor;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
 
@@ -39,6 +41,25 @@ public class SecurityConfig  {
   public AuthenticationManager authenticationManager(){
     return new ProviderManager(ajaxAuthenticationProvider);
   }
+
+
+
+
+
+//  @Bean
+//  public AuthorizationFilter authorizationFilter () {
+//    AuthorizationFilter authorizationFilter = new AuthorizationFilter((AuthorizationManager<HttpServletRequest>) authenticationManager());
+//
+//  }
+
+
+  @Bean
+  public AuthorizationManager authorizationManager() {
+    CustomAuthorizationManager customAuthorizationManager = new CustomAuthorizationManager();
+    return customAuthorizationManager;
+  }
+
+
 
 
   @Bean
@@ -61,12 +82,13 @@ public class SecurityConfig  {
             .csrf(csrf -> csrf.disable())
             .authorizeHttpRequests((authz) ->
                     authz
-                            .requestMatchers("/","/users","/logout","/api/login").permitAll()
-                            .requestMatchers("/mypage").hasRole("USER")
-                            .requestMatchers("/message").hasAnyRole("MANAGER", "ADMIN")
-                            .requestMatchers("/config").hasRole("ADMIN")
-                            .anyRequest()
-                            .authenticated()
+                            .anyRequest().access(authorizationManager())
+//                            .requestMatchers("/","/users","/logout","/api/login").permitAll()
+//                            .requestMatchers("/mypage").hasRole("USER")
+//                            .requestMatchers("/message").hasAnyRole("MANAGER", "ADMIN")
+//                            .requestMatchers("/config").hasRole("ADMIN")
+//                            .anyRequest()
+//                            .authenticated()
 
             )
             .formLogin(formLogin ->
@@ -84,6 +106,7 @@ public class SecurityConfig  {
                                     .maxSessionsPreventsLogin(false) // true 동시 로그인 차단, false 기존 세션 만료 기존 세션 만료
             )
 //            .authenticationProvider(authenticationProvider)
+//            .authorizeHttpRequests( )
             .addFilterBefore(ajaxLoginProcessFilter(authenticationManager()), UsernamePasswordAuthenticationFilter.class);
 
     return http.build();
